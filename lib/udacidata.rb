@@ -77,4 +77,18 @@ class Udacidata
     # return the object
     new_recored
   end
+
+  def self.destroy(record_id)
+    data_file = CSV.read(DATA_PATH)
+    deleted_record = data_file.delete_at(record_id)
+    CSV.open(DATA_PATH, 'w') do |csv|
+      data_file.each { |row| csv << row }
+    end
+    new(
+      id: deleted_record[0],
+      brand: deleted_record[1],
+      name: deleted_record[2],
+      price: deleted_record[3]
+    )
+  end
 end
