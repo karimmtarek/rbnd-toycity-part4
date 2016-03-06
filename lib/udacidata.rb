@@ -47,6 +47,16 @@ class Udacidata
     end
   end
 
+  def self.find(record_id)
+    record = CSV.read(DATA_PATH).drop(1)[record_id - 1]
+    new(
+      id: record[0],
+      brand: record[1],
+      name: record[2],
+      price: record[3]
+    )
+  end
+
   def self.create(attributes = nil)
     # If the object's data is already in the database
     # create the object
