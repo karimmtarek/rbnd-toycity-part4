@@ -4,6 +4,12 @@ require 'csv'
 
 class Udacidata
   DATA_PATH = File.dirname(__FILE__) + "/../data/data.csv"
+  DATA_HEADER = {
+    id: 0,
+    brand: 1,
+    name: 2,
+    price: 3
+  }
 
   def self.all
     CSV.read(DATA_PATH).drop(1)
@@ -55,6 +61,23 @@ class Udacidata
       name: record[2],
       price: record[3]
     )
+  end
+
+  def self.where(statement)
+    records = CSV.read(DATA_PATH).drop(1)
+    selected = records.select do |record|
+      record[DATA_HEADER[statement.keys.first]] == statement.values.first
+    end
+    requested_records = []
+    selected.each do |record|
+      requested_records << new(
+        id: record[0],
+        brand: record[1],
+        name: record[2],
+        price: record[3]
+      )
+    end
+    requested_records
   end
 
   def self.create(attributes = nil)
