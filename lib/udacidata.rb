@@ -11,6 +11,10 @@ class Udacidata
     price: 3
   }
 
+  DATA_HEADER.keys.each do |key|
+    attr_writer key.to_sym
+  end
+
   def self.all
     CSV.read(DATA_PATH).drop(1)
   end
@@ -99,6 +103,26 @@ class Udacidata
 
     # return the object
     new_recored
+  end
+
+  def update(params)
+    data_file = CSV.read(DATA_PATH)
+
+    data_file.each do |record|
+      next unless record[0] == id.to_s
+      params.each do |k, v|
+        record[DATA_HEADER[k]] = v
+      end
+      self.brand = record[1]
+      self.name = record[2]
+      self.price = record[3]
+    end
+
+    CSV.open(DATA_PATH, 'w') do |csv|
+      data_file.each { |row| csv << row }
+    end
+
+    self
   end
 
   def self.destroy(record_id)
