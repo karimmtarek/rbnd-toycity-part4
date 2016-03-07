@@ -1,6 +1,11 @@
 class Module
   def create_finder_methods(*attributes)
-    # Your code goes here!
-    # Hint: Remember attr_reader and class_eval
+    attributes.each do |attribute|
+      send(:define_method, "find_by_#{attribute}") do |arg|
+        where(attribute.to_sym => arg).first
+      end
+    end
   end
 end
+
+Module.create_finder_methods('brand', 'name')
