@@ -67,13 +67,18 @@ class Udacidata
   end
 
   def self.find(record_id)
-    record = CSV.read(DATA_PATH).drop(1)[record_id - 1]
-    new(
-      id: record[0],
-      brand: record[1],
-      name: record[2],
-      price: record[3]
-    )
+    data_file = CSV.read(DATA_PATH)
+    record = data_file[record_id]
+    if record_id > data_file.length
+      fail no_recored_error(record_id)
+    else
+      new(
+        id: record[0],
+        brand: record[1],
+        name: record[2],
+        price: record[3]
+      )
+    end
   end
 
   def self.where(statement)
@@ -136,7 +141,13 @@ class Udacidata
 
   def self.destroy(record_id)
     data_file = CSV.read(DATA_PATH)
-    deleted_record = data_file.delete_at(record_id)
+
+    if record_id > data_file.length
+      fail no_recored_error(record_id)
+    else
+      deleted_record = data_file.delete_at(record_id)
+    end
+
     CSV.open(DATA_PATH, 'w') do |csv|
       data_file.each { |row| csv << row }
     end
@@ -146,5 +157,9 @@ class Udacidata
       name: deleted_record[2],
       price: deleted_record[3]
     )
+  end
+
+  def self.no_recored_error(record_id)
+    ProductNotFoundError.new "No record found with id: #{record_id}."
   end
 end
