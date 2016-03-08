@@ -16,7 +16,16 @@ class Udacidata
   end
 
   def self.all
-    CSV.read(DATA_PATH).drop(1)
+    records = CSV.read(DATA_PATH).drop(1)
+
+    records.map do |record|
+      new(
+        id: record[0],
+        brand: record[1],
+        name: record[2],
+        price: record[3]
+      )
+    end
   end
 
   def self.first(records = nil)
