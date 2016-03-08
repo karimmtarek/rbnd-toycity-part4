@@ -10,3 +10,8 @@ def db_create
     end
   end
 end
+
+def db_delete
+  data_path = File.dirname(__FILE__) + "/data.csv"
+  File.delete(data_path) if File.exist?(data_path)
+end
