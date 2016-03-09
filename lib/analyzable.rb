@@ -18,24 +18,14 @@ module Analyzable
   end
 
   def self.count_by_brand(products)
-    brands_count = {}
-    brands = products.map(&:brand).uniq
-
-    brands.each do |brand|
-      brands_count[brand] = products.select { |p| p.brand == brand }.size
+    products.map(&:brand).uniq.inject({}) do |brands_count, brand|
+      brands_count.merge(brand => products.select { |p| p.brand == brand }.size)
     end
-
-    brands_count
   end
 
   def self.count_by_name(products)
-    name_count = {}
-    names = products.map(&:name).uniq
-
-    names.each do |name|
-      name_count[name] = products.select { |p| p.name == name }.size
+    products.map(&:name).uniq.inject({}) do |name_count, name|
+      name_count.merge(name => products.select { |p| p.name == name }.size)
     end
-
-    name_count
   end
 end
