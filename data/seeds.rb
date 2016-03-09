@@ -14,7 +14,7 @@ def db_seed
     prices << Faker::Commerce.price
   end
 
-  100.times do
+  10.times do
     Product.create(
         brand: brands.sample,
         name: product_names.sample,
