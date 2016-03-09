@@ -5,15 +5,10 @@ require 'csv'
 class Udacidata
   DATA_PATH = File.dirname(__FILE__) + "/../data/data.csv"
 
-  DATA_HEADER = {
-    id: 0,
-    brand: 1,
-    name: 2,
-    price: 3
-  }
+  DATA_HEADER = [:id, :brand, :name, :price]
 
-  DATA_HEADER.keys.each do |key|
-    attr_writer key.to_sym
+  DATA_HEADER.each do |attr|
+    attr_writer attr
   end
 
   def self.all
@@ -35,7 +30,7 @@ class Udacidata
 
   def self.find(record_id)
     fail no_recored_error(record_id) if record_id > all.length
-    all[record_id - 1]
+    all.select { |record| record.id == record_id }[0]
   end
 
   def self.where(arg)
@@ -45,47 +40,41 @@ class Udacidata
   def self.create(attributes = nil)
     return new(attributes) if attributes[:id] && record_exists?(attributes[:id])
 
-    data_file = CSV.read(DATA_PATH)
+    products = all
     new_recored = new(attributes)
-    data_file << [new_recored.id, new_recored.brand, new_recored.name, new_recored.price]
-    construct_csv(data_file)
+    products << new_recored
+    construct_csv_from_objs(products)
     new_recored
   end
 
   def update(params)
-    data_file = CSV.read(DATA_PATH)
-
-    data_file.each do |record|
-      next unless record[0] == id.to_s
-      params.each do |k, v|
-        record[DATA_HEADER[k]] = v
-      end
-      self.brand = record[1]
-      self.name = record[2]
-      self.price = record[3]
+    params.each do |key, value|
+      send("#{key}=", value)
     end
 
-    construct_csv(data_file)
+    self.class.destroy(id)
+    products = self.class.all
+    products << self
+    self.class.construct_csv_from_objs(products)
     self
   end
 
   def self.destroy(record_id)
-    data_file = CSV.read(DATA_PATH)
+    fail no_recored_error(record_id) unless record_exists?(record_id)
 
-    fail no_recored_error(record_id) if record_id > data_file.length
-
-    deleted_record = data_file.delete_at(record_id)
-    construct_csv(data_file)
-    create_record_obj(deleted_record)
+    products = all
+    # using find returns an object that is diffrent than the one is in the
+    # products array, so this is a work around for now
+    record = products.select { |p| p.id == record_id }[0]
+    deleted_record = products.delete(record)
+    construct_csv_from_objs(products)
+    deleted_record
   end
 
+  private
+
   def self.create_record_obj(record)
-    new(
-        id: record[0],
-        brand: record[1],
-        name: record[2],
-        price: record[3]
-      )
+    new(id: record[0], brand: record[1], name: record[2], price: record[3])
   end
 
   def self.record_exists?(id)
@@ -93,15 +82,16 @@ class Udacidata
     false
   end
 
-  def self.construct_csv(data_file)
+  def self.construct_csv_from_objs(objs)
+    objs.unshift(["id", "brand", "product", "price"])
     CSV.open(DATA_PATH, 'w') do |csv|
-      data_file.each { |row| csv << row }
-    end
-  end
-
-  def construct_csv(data_file)
-    CSV.open(DATA_PATH, 'w') do |csv|
-      data_file.each { |row| csv << row }
+      objs.each do |obj|
+        if obj.is_a?(Array)
+          csv << obj
+        else
+          csv << [obj.id, obj.brand, obj.name, obj.price]
+        end
+      end
     end
   end
 
