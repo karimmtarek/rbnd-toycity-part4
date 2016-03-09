@@ -4,6 +4,7 @@ require 'csv'
 
 class Udacidata
   DATA_PATH = File.dirname(__FILE__) + "/../data/data.csv"
+
   DATA_HEADER = {
     id: 0,
     brand: 1,
@@ -16,106 +17,38 @@ class Udacidata
   end
 
   def self.all
-    records = CSV.read(DATA_PATH).drop(1)
-
-    records.map do |record|
-      new(
-        id: record[0],
-        brand: record[1],
-        name: record[2],
-        price: record[3]
-      )
-    end
+    CSV
+      .read(DATA_PATH)
+      .drop(1)
+      .map { |record| create_record_obj(record) }
   end
 
   def self.first(records = nil)
-    if records
-      data = CSV.read(DATA_PATH).drop(1).slice(0..records - 1)
-      requested_records = []
-      data.each do |record|
-        requested_records << new(
-          id: record[0],
-          brand: record[1],
-          name: record[2],
-          price: record[3]
-        )
-      end
-      requested_records
-    else
-      row = CSV.read(DATA_PATH).drop(1).first
-      new(id: row[0], brand: row[1], name: row[2], price: row[3])
-    end
+    return all.slice(0..records - 1) if records
+    all.first
   end
 
   def self.last(records = nil)
-    if records
-      data = CSV.read(DATA_PATH).drop(1).reverse.slice(0..records - 1)
-      requested_records = []
-      data.each do |record|
-        requested_records << new(
-          id: record[0],
-          brand: record[1],
-          name: record[2],
-          price: record[3]
-        )
-      end
-      requested_records
-    else
-      row = CSV.read(DATA_PATH).drop(1).last
-      new(id: row[0], brand: row[1], name: row[2], price: row[3])
-    end
+    return all.reverse.slice(0..records - 1) if records
+    all.last
   end
 
   def self.find(record_id)
-    data_file = CSV.read(DATA_PATH)
-    record = data_file[record_id]
-    if record_id > data_file.length
-      fail no_recored_error(record_id)
-    else
-      new(
-        id: record[0],
-        brand: record[1],
-        name: record[2],
-        price: record[3]
-      )
-    end
+    fail no_recored_error(record_id) if record_id > all.length
+    all[record_id - 1]
   end
 
-  def self.where(statement)
-    records = CSV.read(DATA_PATH).drop(1)
-    selected = records.select do |record|
-      record[DATA_HEADER[statement.keys.first]] == statement.values.first
-    end
-    requested_records = []
-    selected.each do |record|
-      requested_records << new(
-        id: record[0],
-        brand: record[1],
-        name: record[2],
-        price: record[3]
-      )
-    end
-    requested_records
+  def self.where(arg)
+    all.select { |record| record.send(arg.keys.first.to_sym) == arg.values.first }
   end
 
   def self.create(attributes = nil)
-    # If the object's data is already in the database
-    # create the object
-    # return the object
+    return new(attributes) if attributes[:id] && record_exists?(attributes[:id])
 
-    # If the object's data is not in the database
-    # create the object
-    new_recored = new(attributes)
-
-    # save the data in the database
     data_file = CSV.read(DATA_PATH)
+    new_recored = new(attributes)
     data_file << [new_recored.id, new_recored.brand, new_recored.name, new_recored.price]
-
-    CSV.open(DATA_PATH, 'w') do |csv|
-      data_file.each { |row| csv << row }
-    end
-
-    # return the object
+    construct_csv(data_file)
     new_recored
   end
 
@@ -132,31 +65,44 @@ class Udacidata
       self.price = record[3]
     end
 
-    CSV.open(DATA_PATH, 'w') do |csv|
-      data_file.each { |row| csv << row }
-    end
-
+    construct_csv(data_file)
     self
   end
 
   def self.destroy(record_id)
     data_file = CSV.read(DATA_PATH)
 
-    if record_id > data_file.length
-      fail no_recored_error(record_id)
-    else
-      deleted_record = data_file.delete_at(record_id)
-    end
+    fail no_recored_error(record_id) if record_id > data_file.length
 
+    deleted_record = data_file.delete_at(record_id)
+    construct_csv(data_file)
+    create_record_obj(deleted_record)
+  end
+
+  def self.create_record_obj(record)
+    new(
+        id: record[0],
+        brand: record[1],
+        name: record[2],
+        price: record[3]
+      )
+  end
+
+  def self.record_exists?(id)
+    all.each { |record| return true if record.id == id }
+    false
+  end
+
+  def self.construct_csv(data_file)
     CSV.open(DATA_PATH, 'w') do |csv|
       data_file.each { |row| csv << row }
     end
-    new(
-      id: deleted_record[0],
-      brand: deleted_record[1],
-      name: deleted_record[2],
-      price: deleted_record[3]
-    )
+  end
+
+  def construct_csv(data_file)
+    CSV.open(DATA_PATH, 'w') do |csv|
+      data_file.each { |row| csv << row }
+    end
   end
 
   def self.no_recored_error(record_id)
